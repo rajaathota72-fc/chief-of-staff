@@ -1,0 +1,15 @@
+[Unit]
+Description=Chief of Staff - web (gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/chief-of-staff/web
+EnvironmentFile=/opt/chief-of-staff/.env
+ExecStart=/opt/chief-of-staff/.venv/bin/gunicorn --bind 127.0.0.1:5087 --workers 3 --timeout 60 app:app
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

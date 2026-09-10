@@ -1,0 +1,23 @@
+[
+  {
+    "id": "pref_001",
+    "rule": "Never book meetings before 9:30am - that's protected deep-work/standup time.",
+    "category": "scheduling",
+    "created_at": "2026-08-01T00:00:00+00:00",
+    "source": "seed"
+  },
+  {
+    "id": "pref_002",
+    "rule": "Cold recruiter outreach and unsolicited sales pitches should be politely declined automatically, not escalated.",
+    "category": "scheduling",
+    "created_at": "2026-08-01T00:00:00+00:00",
+    "source": "seed"
+  },
+  {
+    "id": "pref_003",
+    "rule": "Anything involving a signed contract, legal redlines, or liability terms must be escalated - never auto-reply to legal.",
+    "category": "escalation",
+    "created_at": "2026-08-01T00:00:00+00:00",
+    "source": "seed"
+  }
+]

@@ -1,0 +1,47 @@
+{
+  "requests": [
+    {
+      "id": "cr_001",
+      "requester": "maria@delta-corp.com",
+      "requester_name": "Maria Chen (Delta Corp, prospect)",
+      "proposed_time": "2026-09-09T09:30:00",
+      "duration_minutes": 30,
+      "topic": "Contract next-steps call",
+      "status": "pending"
+    },
+    {
+      "id": "cr_002",
+      "requester": "random-recruiter@talentscout.com",
+      "requester_name": "Talentscout Recruiting",
+      "proposed_time": "2026-09-09T09:45:00",
+      "duration_minutes": 30,
+      "topic": "Exciting opportunity - quick chat?",
+      "status": "pending"
+    },
+    {
+      "id": "cr_003",
+      "requester": "cofounder@ourcompany.com",
+      "requester_name": "Alex (Co-founder)",
+      "proposed_time": "2026-09-09T15:00:00",
+      "duration_minutes": 45,
+      "topic": "Q3 hiring plan - need your input",
+      "status": "pending"
+    }
+  ],
+  "events": [
+    {
+      "id": "ev_001",
+      "title": "Team standup",
+      "start": "2026-09-09T09:00:00",
+      "end": "2026-09-09T09:15:00",
+      "attendees": ["team@ourcompany.com"]
+    },
+    {
+      "id": "ev_002",
+      "title": "1:1 with Head of Sales",
+      "start": "2026-09-09T13:00:00",
+      "end": "2026-09-09T13:30:00",
+      "attendees": ["sales-lead@ourcompany.com"]
+    }
+  ]
+}

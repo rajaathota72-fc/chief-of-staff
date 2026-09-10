@@ -1,0 +1,72 @@
+[
+  {
+    "id": "em_001",
+    "thread_id": "th_001",
+    "sender": "sam@brightpath-ventures.com",
+    "sender_name": "Sam Whitaker (Brightpath Ventures)",
+    "subject": "Quick investor update?",
+    "body": "Hey! Would love a quick update on MRR and headcount for our internal tracking. No rush, whenever you get a chance this week.",
+    "received_at": "2026-09-08T09:14:00",
+    "status": "unread"
+  },
+  {
+    "id": "em_002",
+    "thread_id": "th_002",
+    "sender": "priya@northwind-agency.com",
+    "sender_name": "Priya Nair (Northwind Agency, client)",
+    "subject": "Can we also add the mobile version to this sprint?",
+    "body": "Hi, loving progress on the redesign! One more thing - can we squeeze the mobile-responsive version into this sprint too? Shouldn't be much extra work right?",
+    "received_at": "2026-09-08T10:02:00",
+    "status": "unread"
+  },
+  {
+    "id": "em_003",
+    "thread_id": "th_003",
+    "sender": "billing@cloudstack-hosting.com",
+    "sender_name": "Cloudstack Hosting Billing",
+    "subject": "Invoice #88213 - past due reminder",
+    "body": "This is a reminder that invoice #88213 for $412.00 is now 5 days past due. Please remit payment to avoid service interruption.",
+    "received_at": "2026-09-08T07:30:00",
+    "status": "unread"
+  },
+  {
+    "id": "em_004",
+    "thread_id": "th_004",
+    "sender": "jordan@personal-email.com",
+    "sender_name": "Jordan (old college friend)",
+    "subject": "In town next week!",
+    "body": "Hey! I'll be in town Tuesday through Thursday next week, would love to grab dinner if you're free one of those nights.",
+    "received_at": "2026-09-08T11:45:00",
+    "status": "unread"
+  },
+  {
+    "id": "em_005",
+    "thread_id": "th_005",
+    "sender": "legal@harrison-partners.com",
+    "sender_name": "Harrison & Partners LLP",
+    "subject": "Redlines on the MSA - please review",
+    "body": "Attached are our redlines on the Master Services Agreement with Delta Corp. A few clauses around liability caps need your sign-off before we send back. Can you review by end of week?",
+    "received_at": "2026-09-08T08:20:00",
+    "status": "unread"
+  },
+  {
+    "id": "em_006",
+    "thread_id": "th_006",
+    "sender": "newsletter@growthhacks.io",
+    "sender_name": "GrowthHacks Weekly",
+    "subject": "5 tactics to 10x your funnel this quarter",
+    "body": "This week: cold email templates that convert, a case study on churn reduction, and our top pick of tools for founders.",
+    "received_at": "2026-09-08T06:00:00",
+    "status": "unread"
+  },
+  {
+    "id": "em_007",
+    "thread_id": "th_007",
+    "sender": "maria@delta-corp.com",
+    "sender_name": "Maria Chen (Delta Corp, prospect)",
+    "subject": "Following up - still interested, timing question",
+    "body": "Hi, following up on our call last week. Still very interested in moving forward, just need to confirm budget timing with our CFO. Should have an answer by early next week - will that work on your end?",
+    "received_at": "2026-09-07T16:10:00",
+    "status": "unread"
+  }
+]

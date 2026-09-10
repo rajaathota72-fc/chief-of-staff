@@ -1,0 +1,12 @@
+services:
+  web:
+    build: .
+    env_file: .env
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5087:5087"
+  worker:
+    build: .
+    env_file: .env
+    restart: unless-stopped
+    command: ["python", "src/run_worker.py"]

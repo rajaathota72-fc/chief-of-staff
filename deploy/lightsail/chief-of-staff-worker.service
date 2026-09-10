@@ -1,0 +1,15 @@
+[Unit]
+Description=Chief of Staff - background worker
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/chief-of-staff
+EnvironmentFile=/opt/chief-of-staff/.env
+ExecStart=/opt/chief-of-staff/.venv/bin/python src/run_worker.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

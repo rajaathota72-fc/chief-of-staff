@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+.claude/
+
+# generated demo state (regenerated from *.seed.json on each run)
+data/inbox.json
+data/calendar.json
+data/escalations.*.json
+
+# Private connected-workspace state and encryption keys
+data/workspace/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+.encryption-key
+.session-key

@@ -4,6 +4,7 @@ __pycache__/
 .pytest_cache/
 .env
 .claude/
+.idea/
 
 # generated demo state (regenerated from *.seed.json on each run)
 data/inbox.json

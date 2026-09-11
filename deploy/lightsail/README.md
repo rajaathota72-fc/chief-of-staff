@@ -26,7 +26,26 @@ SSH in, then:
 ```bash
 sudo apt update && sudo apt install -y python3.11 python3.11-venv nginx certbot python3-certbot-nginx git
 sudo mkdir -p /opt/chief-of-staff && sudo chown ubuntu:ubuntu /opt/chief-of-staff
-git clone <your-public-repo-url> /opt/chief-of-staff
+```
+
+### Clone with a deploy key (recommended over plain HTTPS)
+
+Generate the key **on the instance** — the private half should never leave
+it. Add the public half as a **read-only Deploy key** on the GitHub repo
+(Settings → Deploy keys → Add deploy key, leave "Allow write access"
+unchecked — this instance only ever pulls).
+
+```bash
+ssh-keygen -t ed25519 -C "lightsail-deploy-chief-of-staff" -f ~/.ssh/chief_of_staff_deploy -N ""
+cat ~/.ssh/chief_of_staff_deploy.pub   # paste this into GitHub -> Deploy keys
+cat >> ~/.ssh/config <<'EOF'
+Host github.com
+  IdentityFile ~/.ssh/chief_of_staff_deploy
+  IdentitiesOnly yes
+EOF
+chmod 600 ~/.ssh/config
+ssh -T git@github.com   # expect: "Hi <owner>/chief-of-staff! You've successfully authenticated"
+git clone git@github.com:rajaathota72-fc/chief-of-staff.git /opt/chief-of-staff
 cd /opt/chief-of-staff
 python3.11 -m venv .venv
 .venv/bin/pip install -r requirements.txt

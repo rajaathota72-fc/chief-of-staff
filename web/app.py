@@ -87,7 +87,7 @@ def create_app(test_config=None):
     @app.after_request
     def headers(response):
         response.headers.update({'X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'no-referrer',
-            'Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com https://*.atlassian.com https://slack.com"})
+            'Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com https://*.atlassian.com https://slack.com https://github.com"})
         if app.config['PRODUCTION']:response.headers['Strict-Transport-Security']='max-age=31536000'
         if request.endpoint!='static':response.headers['Cache-Control']='no-store'
         return response

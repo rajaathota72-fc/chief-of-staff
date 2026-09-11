@@ -40,7 +40,7 @@ class PortalTests(unittest.TestCase):
     def test_oauth_redirect_destinations_are_allowed_by_csp(self):
         policy=self.client.get('/?view=connections').headers['Content-Security-Policy']
         directive=next(part.strip() for part in policy.split(';') if part.strip().startswith('form-action'))
-        self.assertEqual(directive,"form-action 'self' https://accounts.google.com https://*.atlassian.com https://slack.com")
+        self.assertEqual(directive,"form-action 'self' https://accounts.google.com https://*.atlassian.com https://slack.com https://github.com")
 
     def test_all_pages_render(self):
         for page in ('briefing','connections','automation','memory','activity','decisions','team'):

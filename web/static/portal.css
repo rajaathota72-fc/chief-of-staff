@@ -22,3 +22,7 @@
 .digest blockquote{margin:1em 0;padding:.5em 1em;border-left:3px solid #91a886;background:#f3f5ee}
 .digest pre{overflow:auto;padding:1rem;background:#f3f5ee;border-radius:8px;white-space:pre-wrap}.digest code{font-size:.9em;overflow-wrap:anywhere}
 @media(max-width:600px){.digest{font-size:14px}.digest h1{font-size:1.3rem}.digest h2{font-size:1.1rem}}
+
+/* Use the same vector mark in the app and browser tab. */
+.app-brand-icon{display:inline-block;width:36px;height:36px;flex-shrink:0;vertical-align:middle;object-fit:contain}
+.auth-brand{display:inline-flex;align-items:center;gap:10px}.mobile-brand .app-brand-icon{width:32px;height:32px}

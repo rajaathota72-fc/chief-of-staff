@@ -18,6 +18,7 @@ from chief_of_staff.store import Store
 from chief_of_staff.accounts import Accounts, digest, expiry, ROLES
 from chief_of_staff.service import Service, ACTION_KINDS
 from chief_of_staff.integrations import PROVIDERS, IntegrationError, auth_url, configured, finish_oauth, redirect_uri
+from chief_of_staff import billing
 load_dotenv()
 
 GOOGLE_LOGIN_SCOPES = ['openid', 'email', 'profile']
@@ -59,8 +60,8 @@ def create_app(test_config=None):
     def limit(key,n=10,seconds=900):
         if not store.rate_limit(key,n,seconds):abort(429,'Too many attempts. Please try again later.')
 
-    public={'login','signup','verify','forgot_password','reset_password','health','static','privacy','terms','invitation','google_login_start','google_login_callback','agentcore_propose'}
-    admin={'settings','connect','disconnect','channels','save_channels','sites','repos','save_repos','invite_member','revoke_invite'}
+    public={'login','signup','verify','forgot_password','reset_password','health','static','privacy','terms','invitation','google_login_start','google_login_callback','agentcore_propose','billing_webhook'}
+    admin={'settings','connect','disconnect','channels','save_channels','sites','repos','save_repos','invite_member','revoke_invite','billing_checkout'}
     member={'run','approve','dismiss','preference','delete_preference','sample'}
     @app.before_request
     def guard():
@@ -72,7 +73,7 @@ def create_app(test_config=None):
         if store is None and request.endpoint!='health':return render_template('setup.html',message=setup_error),503
         if request.endpoint=='health':return
         session.setdefault('csrf',secrets.token_urlsafe(32));session.setdefault('sid',secrets.token_urlsafe(32))
-        if request.method=='POST' and request.endpoint!='agentcore_propose' and not hmac.compare_digest(session['csrf'],request.form.get('csrf_token','')):abort(400,'Form expired. Reload the page and try again.')
+        if request.method=='POST' and request.endpoint not in ('agentcore_propose','billing_webhook') and not hmac.compare_digest(session['csrf'],request.form.get('csrf_token','')):abort(400,'Form expired. Reload the page and try again.')
         g.user=accounts.session_user(session.get('auth_token'))
         if request.endpoint not in public:
             if not g.user:
@@ -295,6 +296,32 @@ def create_app(test_config=None):
         if not accounts.authenticate(g.user['email'],request.form.get('password','')):raise ValueError('Confirm your password to delete your account.')
         accounts.delete_user(g.user);session.clear();return redirect(url_for('signup'))
 
+    @app.get('/billing')
+    def billing_page():
+        org=store.one('organizations',{'id':org_id()})
+        return render_template('billing.html',billing_org=org,plans=billing.PLANS,trial_limit=billing.TRIAL_BRIEFING_LIMIT,
+            payments_configured=billing.configured())
+
+    @app.post('/billing/checkout')
+    def billing_checkout():
+        plan=request.form.get('plan')
+        if plan not in billing.PLANS:abort(404)
+        try:
+            url=billing.create_checkout_session(store.one('organizations',{'id':org_id()}),plan,g.user,app.config['BASE_URL'])
+        except billing.BillingError as exc:
+            flash(str(exc),'error');return redirect(url_for('billing_page'))
+        return redirect(url)
+
+    @app.post('/billing/webhook')
+    def billing_webhook():
+        try:
+            event=billing.verify_webhook(request.headers,request.get_data())
+        except billing.BillingError as exc:
+            abort(400,str(exc))
+        touched=billing.apply_event(store,event)
+        if touched:store.event('Billing plan updated.',org_id=touched)
+        return jsonify(received=True)
+
     @app.post('/sample')
     def sample():
         service.seed(org_id());store.setting('mode','demo',org_id());flash('Sample accounts are ready. No external actions will be sent.','success');return back()
@@ -333,7 +360,10 @@ def create_app(test_config=None):
         if interval not in (15,30,60,180,1440):raise ValueError('Choose a supported interval.')
         jql=request.form.get('jira_jql','').strip()
         if not 1<=len(jql)<=1000:raise ValueError('Enter a Jira query up to 1,000 characters.')
-        values={'mode':mode,'engine':engine,'interval_minutes':interval,'schedule_enabled':'schedule_enabled' in request.form,
+        schedule_enabled='schedule_enabled' in request.form
+        if schedule_enabled and store.one('organizations',{'id':org_id()}).get('plan','pro')=='trial':
+            raise ValueError('Automatic scheduling requires a Pro or Team plan. Upgrade in Billing.')
+        values={'mode':mode,'engine':engine,'interval_minutes':interval,'schedule_enabled':schedule_enabled,
             'auto_drafts':'auto_drafts' in request.form,'auto_mark_read':'auto_mark_read' in request.form,'jira_jql':jql,'next_run':time.time()+interval*60}
         with store.atomic():
             old=store.settings(org_id());old.update(values);store.update('organizations',{'id':org_id()},{'config':old})

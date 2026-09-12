@@ -144,11 +144,16 @@ class Service:
             raise ValueError('Connect accounts or add sample accounts before running a briefing.')
         if len(self.store.find('runs',{'org_id':org_id,'created':{'$gt':time.time()-3600}}))>=12:
             raise ValueError('This organization has reached its hourly briefing limit.')
+        org=self.store.one('organizations',{'id':org_id})
+        if org.get('plan','pro')=='trial' and org.get('trial_briefings_used',0)>=10:
+            raise ValueError('Trial limit reached (10 briefings). Upgrade to Pro or Team to keep running briefings.')
         try:
             with self.store.atomic():
                 run=self.store.insert('runs',{'org_id':org_id,'mode':settings['mode'],'engine':'strands' if settings['mode']=='live' else settings['engine'],
                     'status':'queued','active':True,'requested_by':actor,'created':time.time(),'digest':None,'error':None})
                 self.store.enqueue('run',run['id'],org_id)
+                if org.get('plan','pro')=='trial':
+                    self.store.update('organizations',{'id':org_id},{'trial_briefings_used':org.get('trial_briefings_used',0)+1})
             return run['id']
         except DuplicateKeyError:raise ValueError('A briefing is already queued or running.') from None
 

@@ -129,9 +129,16 @@ class Store:
         return self.find('organizations',{'id':{'$in':ids},'status':'active'},sort=[('created',1)])
 
     def create_organization(self,user_id,name):
+        from . import billing
         if len(self.organizations_for(user_id))>=20: raise ValueError('Organization limit reached. Contact support.')
+        owned_ids=[m['org_id'] for m in self.find('memberships',{'user_id':user_id,'role':'owner'})]
+        owned=self.find('organizations',{'id':{'$in':owned_ids},'status':'active'})
+        limit=billing.workspace_limit(o.get('plan','trial') for o in owned)
+        if len(owned)>=limit:
+            raise ValueError(f'Workspace limit reached ({limit}). Upgrade a workspace to Pro or Team to raise this limit.')
         with self.atomic():
-            org=self.insert('organizations',{'name':name,'status':'active','config':defaults(),'created':time.time(),'auth_revision':0})
+            org=self.insert('organizations',{'name':name,'status':'active','config':defaults(),'created':time.time(),'auth_revision':0,
+                'plan':'trial','trial_briefings_used':0,'subscription_id':None,'subscription_status':None})
             self.insert('memberships',{'org_id':org['id'],'user_id':user_id,'role':'owner','created':time.time()})
         return org
 

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="{{ url_for('static',filename='favicon.svg',v='2') }}"><title>Chief of Staff · Billing</title><link rel="stylesheet" href="{{ url_for('static',filename='portal.css') }}"><link rel="stylesheet" href="{{ url_for('static',filename='accounts.css') }}"><link rel="stylesheet" href="{{ url_for('static',filename='billing.css') }}"></head>
+<body><main class="billing-layout"><header class="billing-header"><a class="auth-brand" href="/"><img class="app-brand-icon" src="{{ url_for('static',filename='favicon.svg',v='2') }}" width="36" height="36" alt="" aria-hidden="true"> Chief of Staff</a><a class="billing-back" href="{{ url_for('index') }}">← Back to workspace</a></header>
+<section class="billing-content">
+<p class="eyebrow">SUBSCRIPTION</p><h1>Plans & billing</h1>
+<p>Current plan: <strong>{{ plans[billing_org.plan].label if billing_org.plan in plans else 'Trial' if billing_org.plan=='trial' else 'Pro' }}</strong></p>
+{% for category,message in get_flashed_messages(with_categories=true) %}<p class="notice {{ category }}">{{ message }}</p>{% endfor %}
+
+{% if billing_org.plan=='trial' %}
+<div class="notice">Trial: {{ billing_org.trial_briefings_used or 0 }} of {{ trial_limit }} briefings used. Automatic scheduling is disabled, and only one trial workspace is allowed per account.</div>
+{% elif billing_org.subscription_status=='past_due' %}
+<div class="notice error">Your last renewal did not go through. Update payment to keep automation running.</div>
+{% endif %}
+
+{% if not payments_configured %}
+<p class="muted">Upgrades are currently unavailable. Contact support for help.</p>
+{% endif %}
+
+<div class="billing-plans">
+{% for id,plan in plans.items() %}
+<article class="panel billing-plan {{ 'is-current' if billing_org.plan==id else '' }}">
+<h2>{{ plan.label }}</h2>
+<p class="plan-price">{{ plan.price_display }}</p>
+<ul>
+<li>Unlimited briefings</li>
+<li>Unlimited connectors (Gmail, Calendar, Jira, Slack, GitHub)</li>
+<li>Automatic scheduling</li>
+{% if id=='team' %}<li>Shared org roles and audit log export</li>{% endif %}
+</ul>
+<div class="plan-action">{% if billing_org.plan==id %}<p class="current-plan">✓ Current plan</p>
+{% else %}<form method="post" action="{{ url_for('billing_checkout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="plan" value="{{ id }}"><button class="btn primary" {{ 'disabled' if not payments_configured else '' }}>Upgrade to {{ plan.label }}</button></form>{% endif %}</div>
+</article>
+{% endfor %}
+</div>
+
+</section>
+</main></body></html>

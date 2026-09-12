@@ -98,21 +98,19 @@ details.queue-item:target{outline:2px solid #ac7b38;outline-offset:4px;border-ra
 }
 @media(max-width:700px){.topbar{display:flex;flex-wrap:wrap;gap:10px}.topbar>span{flex:1;min-width:0}.topbar .topbar-profile{order:1;margin-left:auto;border-left:0;padding:0}.topbar .topbar-status{order:2;width:100%;margin-left:0;justify-content:flex-start;flex-wrap:wrap}.topbar-profile>div{max-width:160px}}
 
-/* Overview fits one screen on desktop: the briefing/decisions panels scroll internally instead of the whole page. */
-@media(min-width:761px){
-  body:has(#briefing) .workspace{height:100vh;display:flex;flex-direction:column;overflow:hidden}
-  body:has(#briefing) main{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
-  body:has(#briefing) .page-heading,body:has(#briefing) .stats,body:has(#briefing) footer,body:has(#briefing) .onboarding{flex-shrink:0}
-  body:has(#briefing) .dashboard-grid{flex:1;min-height:0}
-  body:has(#briefing) .dashboard-grid>.panel{display:flex;flex-direction:column;min-height:0;min-width:0}
-  body:has(#briefing) .dashboard-grid .panel-heading{flex-shrink:0}
-  body:has(#briefing) .digest{flex:1;min-height:0;max-height:none;overflow-x:hidden}
-  body:has(#briefing) .digest table{display:block;overflow-x:auto;max-width:100%}
-  body:has(#briefing) .digest pre{overflow-x:auto;max-width:100%}
-  body:has(#briefing) .decisions-scroll{flex:1;min-height:0;max-height:none;margin-bottom:0;overflow-x:hidden}
-  body:has(#briefing) .empty{flex:1;display:flex;flex-direction:column;justify-content:center}
-  body:has(#briefing) .guide-item{margin-bottom:0}
-}
+/* Overview fits one screen at any width/zoom: the briefing/decisions panels scroll internally, footer stays pinned. */
+body:has(#briefing) .workspace{height:100vh;display:flex;flex-direction:column;overflow:hidden}
+body:has(#briefing) main{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+body:has(#briefing) .page-heading,body:has(#briefing) .stats,body:has(#briefing) footer,body:has(#briefing) .onboarding{flex-shrink:0}
+body:has(#briefing) .dashboard-grid{flex:1;min-height:0}
+body:has(#briefing) .dashboard-grid>.panel{display:flex;flex-direction:column;min-height:0;min-width:0}
+body:has(#briefing) .dashboard-grid .panel-heading{flex-shrink:0}
+body:has(#briefing) .digest{flex:1;min-height:0;max-height:none;overflow-x:hidden}
+body:has(#briefing) .digest table{display:block;overflow-x:auto;max-width:100%}
+body:has(#briefing) .digest pre{overflow-x:auto;max-width:100%}
+body:has(#briefing) .decisions-scroll{flex:1;min-height:0;max-height:none;margin-bottom:0;overflow-x:hidden}
+body:has(#briefing) .empty{flex:1;display:flex;flex-direction:column;justify-content:center}
+body:has(#briefing) .guide-item{margin-bottom:0}
 
 /* A tidier "open full queue" affordance next to the panel heading. */
 .decisions-panel .panel-heading>a{flex-shrink:0;white-space:nowrap;font-size:12px;font-weight:600;color:#27654d;padding:7px 12px;border-radius:7px;background:#eef2e8}

@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="{{ url_for('static',filename='favicon.svg',v='2') }}"><title>Chief of Staff · Set up two-factor authentication</title><link rel="stylesheet" href="{{ url_for('static',filename='portal.css') }}"><link rel="stylesheet" href="{{ url_for('static',filename='accounts.css') }}"></head><body><main class="auth-layout"><a class="auth-brand" href="/"><img class="app-brand-icon" src="{{ url_for('static',filename='favicon.svg',v='2') }}" width="36" height="36" alt="" aria-hidden="true"> Chief of Staff</a><section class="panel">
+<h1>Set up two-factor authentication.</h1>
+{% for category,message in get_flashed_messages(with_categories=true) %}<p class="notice {{ category }}">{{ message }}</p>{% endfor %}
+<p>Scan this code with an authenticator app (Google Authenticator, 1Password, Authy).</p>
+<img src="{{ qr }}" width="200" height="200" alt="Two-factor setup QR code">
+<p class="muted">Can't scan? Enter this key manually: <code>{{ secret }}</code></p>
+<form method="post" action="{{ url_for('totp_enable') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="code">Enter the 6-digit code from your app</label><input id="code" name="code" inputmode="numeric" pattern="[0-9]*" maxlength="6" required autofocus><button class="btn primary">Enable two-factor authentication</button></form>
+<p class="muted space-top"><a href="{{ url_for('account') }}">Cancel</a></p>
+</section></main></body></html>

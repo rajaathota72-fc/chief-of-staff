@@ -37,6 +37,38 @@ class PortalTests(unittest.TestCase):
         self.assertEqual(c.get('/').status_code,302)
         self.assertEqual(c.get('/api/status').status_code,401)
 
+    def test_login_with_totp_enabled_requires_second_step(self):
+        import pyotp
+        secret=self.accounts.new_totp_secret()
+        self.accounts.enable_totp(self.store.one('users',{'id':'owner'}),secret,pyotp.TOTP(secret).now())
+        c=self.app.test_client()
+        c.get('/login')
+        with c.session_transaction() as s:csrf=s['csrf']
+        r=c.post('/login',data={'csrf_token':csrf,'email':'owner@example.com','password':PASSWORD})
+        self.assertEqual(r.status_code,302)
+        self.assertEqual(r.headers['Location'],'/login/2fa')
+        with c.session_transaction() as s:self.assertIsNone(s.get('auth_token'));self.assertEqual(s.get('pending_2fa'),'owner')
+        r2=c.get('/')
+        self.assertEqual(r2.status_code,302)  # still not signed in until 2fa completes
+        with c.session_transaction() as s:csrf2=s['csrf']
+        r3=c.post('/login/2fa',data={'csrf_token':csrf2,'code':pyotp.TOTP(secret).now()})
+        self.assertEqual(r3.status_code,302)
+        with c.session_transaction() as s:self.assertIsNotNone(s.get('auth_token'))
+
+    def test_login_with_totp_rejects_wrong_code(self):
+        import pyotp
+        secret=self.accounts.new_totp_secret()
+        self.accounts.enable_totp(self.store.one('users',{'id':'owner'}),secret,pyotp.TOTP(secret).now())
+        c=self.app.test_client()
+        c.get('/login')
+        with c.session_transaction() as s:csrf=s['csrf']
+        c.post('/login',data={'csrf_token':csrf,'email':'owner@example.com','password':PASSWORD})
+        c.get('/login/2fa')
+        with c.session_transaction() as s:csrf2=s['csrf']
+        r=c.post('/login/2fa',data={'csrf_token':csrf2,'code':'000000'})
+        self.assertEqual(r.status_code,200)
+        with c.session_transaction() as s:self.assertIsNone(s.get('auth_token'))
+
     def test_oauth_redirect_destinations_are_allowed_by_csp(self):
         policy=self.client.get('/?view=connections').headers['Content-Security-Policy']
         directive=next(part.strip() for part in policy.split(';') if part.strip().startswith('form-action'))

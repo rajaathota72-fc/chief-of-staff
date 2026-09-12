@@ -7,6 +7,7 @@ import secrets
 import time
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo.errors import DuplicateKeyError
+import pyotp
 
 ROLES=('owner','admin','member','viewer')
 DUMMY_HASH=generate_password_hash('not-a-user-password')
@@ -149,6 +150,32 @@ class Accounts:
             for collection in ['connections','items','actions','runs','jobs','preferences','oauth','events','invitations','mail','memberships']:
                 self.store.delete(collection,{'org_id':org_id})
             self.store.delete('organizations',{'id':org_id})
+
+    def new_totp_secret(self):
+        return pyotp.random_base32()
+
+    def totp_uri(self,user,secret):
+        return pyotp.TOTP(secret).provisioning_uri(name=user['email'],issuer_name='Chief of Staff')
+
+    def totp_qr_data_uri(self,uri):
+        import base64, io
+        import qrcode
+        image=qrcode.make(uri,border=2)
+        buffer=io.BytesIO();image.save(buffer,format='PNG')
+        return 'data:image/png;base64,'+base64.b64encode(buffer.getvalue()).decode()
+
+    def enable_totp(self,user,secret,code):
+        if not pyotp.TOTP(secret).verify(code,valid_window=1):raise ValueError('Incorrect code. Check your authenticator app and try again.')
+        encrypted=self.store.cipher.encrypt(secret.encode()).decode()
+        self.store.update('users',{'id':user['id']},{'totp_secret':encrypted,'totp_enabled':True})
+
+    def disable_totp(self,user):
+        self.store.update('users',{'id':user['id']},{'totp_secret':None,'totp_enabled':False})
+
+    def verify_totp(self,user,code):
+        if not user.get('totp_enabled') or not user.get('totp_secret'):return False
+        secret=self.store.cipher.decrypt(user['totp_secret'].encode()).decode()
+        return bool(code) and pyotp.TOTP(secret).verify(code.strip(),valid_window=1)
 
     def delete_user(self,user):
         with self.store.atomic():

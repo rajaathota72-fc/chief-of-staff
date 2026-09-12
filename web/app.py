@@ -18,7 +18,7 @@ from chief_of_staff.store import Store
 from chief_of_staff.accounts import Accounts, digest, expiry, ROLES
 from chief_of_staff.service import Service, ACTION_KINDS
 from chief_of_staff.integrations import PROVIDERS, IntegrationError, auth_url, configured, finish_oauth, redirect_uri
-from chief_of_staff import billing
+from chief_of_staff import billing, turnstile
 load_dotenv()
 
 GOOGLE_LOGIN_SCOPES = ['openid', 'email', 'profile']
@@ -60,7 +60,7 @@ def create_app(test_config=None):
     def limit(key,n=10,seconds=900):
         if not store.rate_limit(key,n,seconds):abort(429,'Too many attempts. Please try again later.')
 
-    public={'login','signup','verify','forgot_password','reset_password','health','static','privacy','terms','invitation','google_login_start','google_login_callback','agentcore_propose','billing_webhook'}
+    public={'login','signup','verify','forgot_password','reset_password','health','static','privacy','terms','invitation','google_login_start','google_login_callback','agentcore_propose','billing_webhook','login_2fa'}
     admin={'settings','connect','disconnect','channels','save_channels','sites','repos','save_repos','invite_member','revoke_invite','billing_checkout'}
     member={'run','approve','dismiss','preference','delete_preference','sample'}
     @app.before_request
@@ -88,7 +88,7 @@ def create_app(test_config=None):
     @app.after_request
     def headers(response):
         response.headers.update({'X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'no-referrer',
-            'Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com https://*.atlassian.com https://slack.com https://github.com"})
+            'Content-Security-Policy':"default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self'; img-src 'self' data:; frame-src https://challenges.cloudflare.com; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com https://*.atlassian.com https://slack.com https://github.com"})
         if app.config['PRODUCTION']:response.headers['Strict-Transport-Security']='max-age=31536000'
         if request.endpoint!='static':response.headers['Cache-Control']='no-store'
         return response
@@ -135,25 +135,45 @@ def create_app(test_config=None):
         if not app.config['SIGNUP_ENABLED']:abort(403,'New registrations are closed.')
         if request.method=='POST':
             limit('signup-ip:'+request.remote_addr,5,3600)
+            if not turnstile.verify(request.form.get('cf-turnstile-response',''),request.remote_addr):raise ValueError('Verification failed. Try again.')
             if request.form.get('accept_terms')!='yes':raise ValueError('Accept the terms and privacy notice to create an account.')
             user=accounts.register(request.form.get('email',''),request.form.get('password',''),request.form.get('name',''))
             pending=session.get('invite_token');session.clear();session['auth_token']=accounts.new_session(user)
             if pending:session['invite_token']=pending
             return redirect(url_for('verification_pending'))
-        return render_template('auth.html',screen='signup')
+        return render_template('auth.html',screen='signup',turnstile_site_key=turnstile.site_key(),turnstile_enabled=turnstile.configured())
 
     @app.route('/login',methods=['GET','POST'])
     def login():
         if request.method=='POST':
             email=request.form.get('email','')
             limit('login-ip:'+request.remote_addr,30,900);limit('login-email:'+digest(email.casefold()),10,900)
+            if not turnstile.verify(request.form.get('cf-turnstile-response',''),request.remote_addr):raise ValueError('Verification failed. Try again.')
             user=accounts.authenticate(email,request.form.get('password',''))
             if user:
+                if user.get('totp_enabled'):
+                    pending=session.get('invite_token');session.clear();session['pending_2fa']=user['id']
+                    if pending:session['invite_token']=pending
+                    return redirect(url_for('login_2fa'))
                 pending=session.get('invite_token');session.clear();session['auth_token']=accounts.new_session(user)
                 if pending:session['invite_token']=pending
                 return back()
             flash('Email or password did not match.','error')
-        return render_template('auth.html',screen='login')
+        return render_template('auth.html',screen='login',turnstile_site_key=turnstile.site_key(),turnstile_enabled=turnstile.configured())
+
+    @app.route('/login/2fa',methods=['GET','POST'])
+    def login_2fa():
+        uid=session.get('pending_2fa')
+        if not uid:return redirect(url_for('login'))
+        if request.method=='POST':
+            limit('2fa-attempt:'+uid,10,900)
+            user=store.one('users',{'id':uid})
+            if user and accounts.verify_totp(user,request.form.get('code','')):
+                pending=session.get('invite_token');session.clear();session['auth_token']=accounts.new_session(user)
+                if pending:session['invite_token']=pending
+                return back()
+            flash('Incorrect code. Try again.','error')
+        return render_template('auth.html',screen='totp')
 
     @app.get('/auth/google')
     def google_login_start():
@@ -295,6 +315,28 @@ def create_app(test_config=None):
     def delete_account():
         if not accounts.authenticate(g.user['email'],request.form.get('password','')):raise ValueError('Confirm your password to delete your account.')
         accounts.delete_user(g.user);session.clear();return redirect(url_for('signup'))
+
+    @app.get('/account/2fa/setup')
+    def totp_setup():
+        if g.user.get('totp_enabled'):return redirect(url_for('account'))
+        secret=session.get('pending_totp_secret') or accounts.new_totp_secret()
+        session['pending_totp_secret']=secret
+        uri=accounts.totp_uri(g.user,secret)
+        return render_template('totp_setup.html',secret=secret,qr=accounts.totp_qr_data_uri(uri))
+
+    @app.post('/account/2fa/enable')
+    def totp_enable():
+        secret=session.get('pending_totp_secret')
+        if not secret:raise ValueError('Start setup again from your account page.')
+        accounts.enable_totp(g.user,secret,request.form.get('code',''))
+        session.pop('pending_totp_secret',None)
+        flash('Two-factor authentication is enabled.','success');return redirect(url_for('account'))
+
+    @app.post('/account/2fa/disable')
+    def totp_disable():
+        if not accounts.authenticate(g.user['email'],request.form.get('password','')):raise ValueError('Confirm your password to disable two-factor authentication.')
+        accounts.disable_totp(g.user)
+        flash('Two-factor authentication is disabled.','success');return redirect(url_for('account'))
 
     @app.get('/billing')
     def billing_page():

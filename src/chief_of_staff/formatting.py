@@ -1,11 +1,17 @@
 """Render untrusted agent Markdown without embedded HTML or remote images."""
 from markdown_it import MarkdownIt
 from markupsafe import Markup
+import re
 
 _renderer = MarkdownIt('commonmark', {'html': False, 'breaks': False}).disable('image')
 
 def render_markdown(value):
-    return Markup(_renderer.render(str(value or '')))
+    text = str(value or '')
+    # Presentation only; preserve the stored agent response and source snapshots.
+    text = re.sub(r'[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F\u200D]', '', text)
+    text = re.sub(r'(?im)^#{1,6}\s+(?:summary digest)\s*\n', '', text)
+    text = re.sub(r'(?m)^(#{1,6})[ \t]+', r'\1 ', text)
+    return Markup(_renderer.render(text.strip()))
 
 
 def source_preview(value):

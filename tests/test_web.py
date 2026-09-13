@@ -126,6 +126,12 @@ class PortalTests(unittest.TestCase):
         self.seed_run();aid=self.service.snapshot('personal')['actions'][0]['id']
         self.assertEqual(self.post('/actions/'+aid+'/approve',client=c).status_code,404)
 
+    def test_memory_page_renders_with_saved_preferences(self):
+        self.post('/preferences',{'rule':'Protect mornings for focused work.'})
+        r=self.client.get('/?view=memory')
+        self.assertEqual(r.status_code,200)
+        self.assertIn(b'Protect mornings for focused work.',r.data)
+
     def test_viewer_has_read_access_but_cannot_mutate(self):
         add_user(self.store,'reader');self.store.insert('memberships',{'org_id':'personal','user_id':'reader','role':'viewer'})
         c=self.login_client('reader');self.seed_run()
